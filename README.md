@@ -25,22 +25,16 @@ This is copied from the [Pulse-test-data-generator project](https://github.com/B
 - User Progress
   - Scenarios that create content and view it, login user, create grades and grade user, and have users create discussion posts and replies
 
-## Running the tests
-
-### Discussions:
-```BASH
-$ npm run discussions
+## Generating the Data
+``` BASH
+node app.js
+>
 ```
 
-### User progress
-```BASH
-$ npm run user-progress
-```
-This runs through 4 user scenarios, with different combinations of the following:
-- login count
-- content viewed
-- discussion posts created and replied to
-- grades received
+Available commands:
+`cleanup`: cleanup any students created during this session. if session is exited, students must be deleted manually
+`createStudents`: creates 250 students in the LMS
+`.exit`: exit
 
 ### Configuration
 
