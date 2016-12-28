@@ -1,0 +1,86 @@
+{
+	"lms": {
+		"name": "lms",
+		"href": "{config.LMS_URL}",
+		"tags": [],
+		"logins": {
+			{#iter for=users limit=1}
+			"{key}": {
+				"name": "{key}",
+				"username": "{value.UserName}",
+				"password": "{config.PASSWORD}",
+				"tags": ["student"]
+			},
+			{/iter}
+			"d2lsupport": {
+				"name": "d2lsupport",
+				"username": "{config.USERNAME}",
+				"password": "{config.PASSWORD}",
+				"tags": ["d2lsupport"]
+			}
+		},
+		"tests": {
+			{#iter for=links limit=1}
+			"{key}": {
+				"name": "{key}",
+				"tags": ["{key}"],
+				"orgUnit": "{value.orgUnitId}",
+				"topicId": "{value.Id}",
+				"pages": ["viewContent"]
+			},
+			{/iter}
+			{#iter for=courses}
+			"tools-{key}": {
+				"name": "tools-{key}",
+				"tags": [],
+				"orgUnit": "{value.Identifier}",
+				"pages": [
+					"home",
+					"content",
+					"calendar",
+					"classlist",
+					"checklists",
+					"ePortfolio",
+					"courseadmin",
+					"competencies",
+					"discussions",
+					"assignments",
+					"grades",
+					"announcements",
+					"quizzing",
+					"onlinerooms",
+					"classprogress",
+					"managefiles",
+					"awards"
+				]
+			},
+			{#iter for=users key="userName" value="user"}
+			"userprogress-{key}-{userName}": {
+				"name": "userprogress-{key}-{userName}",
+				"tags": [],
+				"orgUnit": "{value.Identifier}",
+				"userId": "{user.UserId}",
+				"pages": [
+					"userprogress-summary",
+					"userprogress-grades",
+					"userprogress-objectives",
+					"userprogress-content",
+					"userprogress-discussions",
+					"userprogress-assignments",
+					"userprogress-quizzes",
+					"userprogress-checklist",
+					"userprogress-survey",
+					"userprogress-loginhistory"
+				]
+			},
+			{/iter}
+			{/iter}
+			"login": {
+				"name": "login",
+				"tags": [],
+				"pages": ["login"],
+				"logins": [null]
+			}
+		}
+	}
+}

@@ -1,0 +1,37 @@
+{
+  "name": "Pulse-updates-tests",
+  "scripts": {
+    "mocha": "./node_modules/mocha/bin/_mocha",
+    "discussions": "mocha --timeout 120000 ./test/discussions.js",
+    "combo": "mocha --timeout 120000 ./test/combination.js",
+    "user-progress": "node test/userProgress.js",
+    "lint": "eslint .",
+    "test": "npm run lint -s"
+  },
+  "config": {
+    "lms_url": "http://uxdtest.uat.d2ldev.com",
+    "tenant_id": "97e3a278-bcbc-4e3b-aa0e-334bd491988e",
+    "auth_service": "https://dev-auth.brightspace.com/core/",
+    "username": "PulseUser",
+    "password": "d2l",
+    "device_token": "AndroidE2ETestDevice",
+    "device_platform": "android",
+    "bfs_url": "https://updates.api.dev.brightspace.com",
+    "export_template": "./templates/lms.json.dust"
+  },
+  "devDependencies": {
+    "@d2l/brightspace-test-bench": "file:../brightspace-test-bench/",
+    "@d2l/gimme-jwt": "^1.0.0",
+    "better-assert": "^1.0.2",
+    "chai": "3.0.0",
+    "chance": "^1.0.4",
+    "co": "^4.5.4",
+    "dustjs-linkedin": "^2.7.3",
+    "eslint": "^3.3.1",
+    "eslint-config-brightspace": "^0.2.1",
+    "mocha": "^2.1.0",
+    "nightmare": "^2.6.1",
+    "superagent": "^1.2.0",
+    "supertest": "^0.15.0"
+  }
+}
