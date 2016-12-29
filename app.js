@@ -13,11 +13,15 @@ testBench.initialize(config.TENANT_ID, config.LMS_URL, config.AUTH_SERVICE);
 
 function *cleanup() {
 	console.log('cleaning up data created in this session...');
-	yield testBench.users.cleanup();
+	yield testBench.users.cleanup()
+		.then(function() {
+			testBench.courses.cleanup();
+		});
 }
 
 function createCourses() {
   const templateAlias = 'Test Template';
+  console.log('creating template...');
   testBench.courses.createCourseTemplate(templateAlias)
     .then(function() {
       coursesLoop(1);
@@ -42,7 +46,8 @@ function createCourses() {
 }
 
 function createStudents() {
-	const userRoleId = 595;
+	const userRoleId = 595,
+		courseAlias = config.COURSE_NAME + '1';
 	console.log('creating students...');
 	function makeStudent(n) {
 		console.log('making student ' + n);
@@ -56,13 +61,43 @@ function createStudents() {
 		}
 		else {
 			testBench.users.createUser(userAlias, userRoleId, userData)
-				.catch(function(err) {
+				.then(function() {
+					testBench.enrollments.enrollUserInCourse(userAlias, courseAlias, userRoleId)
+						.catch(function(err) {
+							console.log('something went wrong with enrolling\n' + err);
+						});
+				})
+				.catch(function() {
 					console.log('User ' + userAlias + ' already exists.');
 				});
 			makeStudent(n+1);
 		}
 	}
 	makeStudent(1);
+}
+
+function createTeacher() {
+	const userRoleId = 596,
+		userAlias = 'd2lteacher',
+		userData = {
+			UserName: userAlias
+		};
+	testBench.users.createUser(userAlias, userRoleId, userData)
+		.then(function() {
+			enrollLoop(1);
+		}).catch(function(err) {
+			console.log('something went wrong creating the teacher: ' + err);
+		});
+
+	function enrollLoop(n) {
+		var courseAlias = config.COURSE_NAME + n;
+		if(n===51) return;
+		testBench.enrollments.enrollUserInCourse(userAlias, courseAlias, userRoleId)
+			.catch(function(err) {
+				console.log('something went wrong with an enrollment: ' + err);
+			});
+		enrollLoop(n+1);
+	}
 }
 
 function myEval(cmd) {
@@ -75,6 +110,9 @@ function myEval(cmd) {
         break;
 			case 'createStudents':
 				createStudents();
+				break;
+			case 'createTeacher':
+				createTeacher();
 				break;
 			case 'cleanup':
 				yield cleanup();

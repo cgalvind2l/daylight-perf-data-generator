@@ -32,8 +32,11 @@ node app.js
 ```
 
 Available commands:
+
 `cleanup`: cleanup any students created during this session. if session is exited, students must be deleted manually
+
 `createStudents`: creates 250 students in the LMS
+
 `.exit`: exit
 
 ### Configuration
@@ -55,7 +58,8 @@ export LMS_URL='https://pltest.uat.d2ldev.com'
 export USERNAME='PulseUser'
 export PASSWORD='d2l'
 
-npm run news
+node app.js
+>
 ```
 
 If using with a local LMS set appropriate config variable values for LMS_URL, TENANT_ID, BFS_URL and AUTH_SERVICE. Also run the following:
