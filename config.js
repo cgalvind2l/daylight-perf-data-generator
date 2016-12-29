@@ -11,6 +11,7 @@ module.exports = {
 	//DEVICE_PLATFORM: process.env.DEVICE_PLATFORM || process.env.npm_package_config_device_platform,
 	USERNAME: process.env.USERNAME || "d2luser",//process.env.npm_package_config_username,
 	PASSWORD: process.env.PASSWORD || "password",//process.env.npm_package_config_password,
+	COURSE_NAME: process.env.COURSE_NAME || "d2lcourse",
 	LOAD_LIMIT: process.env.LOAD_LIMIT || 1024,
 	EXPORT_TEMPLATE: process.env.EXPORT_TEMPLATE || process.env.npm_package_config_export_template
 };

@@ -16,11 +16,36 @@ function *cleanup() {
 	yield testBench.users.cleanup();
 }
 
+function createCourses() {
+  const templateAlias = 'Test Template';
+  testBench.courses.createCourseTemplate(templateAlias)
+    .then(function() {
+      coursesLoop(1);
+    }).catch(function(err) {
+      console.log('something went wrong in creating the template: ' + err.body);
+    });
+
+    function coursesLoop(n) {
+      console.log('making course ' + n);
+      var courseAlias = config.COURSE_NAME + n;
+      if(n === 51) {
+        console.log('done! created courses');
+        return;
+      } else {
+        testBench.courses.createCourse(courseAlias, templateAlias)
+          .catch(function(err) {
+            console.log('something went wrong');
+          });
+          coursesLoop(n+1);
+      }
+    }
+}
+
 function createStudents() {
 	const userRoleId = 595;
 	console.log('creating students...');
 	function makeStudent(n) {
-		console.log('making studenht ' + n);
+		console.log('making student ' + n);
 		var userAlias = config.USERNAME + n,
 			userData = {
 				UserName: userAlias
@@ -45,15 +70,22 @@ function myEval(cmd) {
 
 	co(function*() {
 		switch(args[0]) {
+      case 'createCourses':
+        createCourses();
+        break;
 			case 'createStudents':
 				createStudents();
 				break;
 			case 'cleanup':
 				yield cleanup();
 				break;
+      case 'generateData':
+        // first, create the courses
+        // then, create the users; the students need to be enrolled in one course, teacher enrolled in all
+        // then, create the discussion posts
 			case 'help':
-				console.log('help');
-				break;
+        console.log('help');
+        break;
 			default:
 				console.log('I didn\'t recognize that command. Type \'help\' to see a list of commands');
 		}
