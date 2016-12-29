@@ -1,8 +1,8 @@
 'use strict';
 const co = require('co'),
- 	repl = require('repl'),
-	testBench = require('@d2l/brightspace-test-bench'),
-	config = require('./config');
+repl = require('repl'),
+testBench = require('@d2l/brightspace-test-bench'),
+config = require('./config');
 
 const replServer = repl.start({
 	prompt: '> ',
@@ -11,69 +11,164 @@ const replServer = repl.start({
 
 testBench.initialize(config.TENANT_ID, config.LMS_URL, config.AUTH_SERVICE);
 
-function *cleanup() {
+function cleanup() {
 	console.log('cleaning up data created in this session...');
-	yield testBench.users.cleanup()
+	return testBench.users.cleanup()
 		.then(function() {
 			testBench.courses.cleanup();
 		});
 }
 
 function createCourses() {
-  const templateAlias = 'Test Template';
-  console.log('creating template...');
-  testBench.courses.createCourseTemplate(templateAlias)
-    .then(function() {
-      coursesLoop(1);
-    }).catch(function(err) {
-      console.log('something went wrong in creating the template: ' + err.body);
-    });
+	const templateAlias = 'Test Template';
+	console.log('creating template...');
 
-    function coursesLoop(n) {
-      console.log('making course ' + n);
-      var courseAlias = config.COURSE_NAME + n;
-      if(n === 51) {
-        console.log('done! created courses');
-        return;
-      } else {
-        testBench.courses.createCourse(courseAlias, templateAlias)
-          .catch(function(err) {
-            console.log('something went wrong');
-          });
-          coursesLoop(n+1);
-      }
-    }
+	return testBench.courses.createCourseTemplate(templateAlias)
+		.then(function() {
+			console.log('creating courses...');
+			return coursesLoop(1);
+		}).catch(function(err) {
+			console.log('something went wrong in creating the template: ' + err);
+		});
+
+	function coursesLoop(n) {
+		var courseAlias = config.COURSE_NAME + n;
+		if(n === 51) {
+			console.log('done! created courses');
+			return Promise.resolve();
+		} else {
+			return testBench.courses.createCourse(courseAlias, templateAlias)
+				.then(function() {
+					return coursesLoop(n+1);
+				}).catch(function(err) {
+					console.log('something went wrong');
+				});
+		}
+	}
+}
+
+function createDiscussions() {
+	const courseAlias = 'd2lcourse1'; //this is the course that everyone is enrolled in
+
+	return forumLoop(1);
+
+	function forumLoop(n) {
+		var forumData = {
+			Name: 'Forum' + n,
+			Description: '',
+			StartDate: null,
+			EndDate: null,
+			PostStartDate: null,
+			PostEndDate: null,
+			AllowAnonymous: false,
+			IsLocked: false,
+			IsHidden: false,
+			RequiresApproval: false
+		};
+		if(n === 7) {
+			console.log('done! created discussions');
+			return Promise.resolve();
+		} else {
+			return testBench.discussions.createForum(forumData, courseAlias)
+				.then(function() {
+					console.log('creating topics for ' + forumData.Name + '...');
+					return topicLoop(1, forumData.Name)
+						.then(function() {
+							return forumLoop(n+1);
+						});
+				}).catch(function(err) {
+					console.log('something went wrong: ' + err);
+				});
+		}
+	}
+
+	function topicLoop(n, forumName) {
+		var topicData = {
+			Name: forumName + 'Topic' + n,
+			Description: null,
+			AllowAnonymousPosts: false,
+			StartDate: null,
+			EndDate: null,
+			IsHidden: false,
+			UnlockStartDate: null,
+			UnlockEndDate: null,
+			RequiresApproval: false,
+			ScoreOutOf: null,
+			IsAutoScore: false,
+			IncludeNonScoredValues: false,
+			ScoringType: null,
+			IsLocked: false,
+			MustPostToParticipate: false,
+			RatingType: null
+		};
+		if(n === 7) {
+			console.log('done! created topics for ' + forumName);
+			return Promise.resolve();
+		} else {
+			return testBench.discussions.createTopic(topicData, forumName)
+				.then(function() {
+					console.log('creating posts for ' + topicData.Name + '...');
+					return postLoop(1, topicData.Name)
+						.then(function() {
+							return topicLoop(n + 1, forumName);
+						});
+				}).catch(function(err) {
+					console.log('something went wrong: ' + err);
+				});
+		}
+	}
+
+	function postLoop(n, topicName) {
+		const postData = {
+			ParentPostId: null,
+			Subject: topicName + 'Post' + n,
+			Message: 'Nothing exciting here',
+			IsAnonymous: false
+		},
+			userPosting = config.USERNAME + n;
+		if(n === 7) {
+			console.log('done! created posts for ' + topicName);
+			return Promise.resolve();
+		} else {
+			return testBench.discussions.createPost(postData, topicName, userPosting)
+				.then(function() {
+					return postLoop(n + 1, topicName);
+				}).catch(function(err) {
+					console.log('something went wrong: ' + err);
+				});
+		}
+	}
 }
 
 function createStudents() {
 	const userRoleId = 595,
-		courseAlias = config.COURSE_NAME + '1';
-	console.log('creating students...');
+	courseAlias = config.COURSE_NAME + '1';
+	console.log('creating and enrolling students...');
+	return makeStudent(1);
+
 	function makeStudent(n) {
-		console.log('making student ' + n);
 		var userAlias = config.USERNAME + n,
-			userData = {
-				UserName: userAlias
-			};
+		userData = {
+			UserName: userAlias
+		};
+
 		if(n === 251){
 			console.log('done! created students successfully');
-			return;
-		}
-		else {
-			testBench.users.createUser(userAlias, userRoleId, userData)
+			return Promise.resolve();
+		} else {
+			return testBench.users.createUser(userAlias, userRoleId, userData)
 				.then(function() {
-					testBench.enrollments.enrollUserInCourse(userAlias, courseAlias, userRoleId)
-						.catch(function(err) {
+					return testBench.enrollments.enrollUserInCourse(userAlias, courseAlias, userRoleId)
+						.then(function() {
+							return makeStudent(n+1);
+						}).catch(function(err) {
 							console.log('something went wrong with enrolling\n' + err);
 						});
-				})
-				.catch(function() {
-					console.log('User ' + userAlias + ' already exists.');
+				}).catch(function(err) {
+					console.log('something went wrong: ' + err);
 				});
-			makeStudent(n+1);
 		}
 	}
-	makeStudent(1);
 }
 
 function createTeacher() {
@@ -82,21 +177,27 @@ function createTeacher() {
 		userData = {
 			UserName: userAlias
 		};
-	testBench.users.createUser(userAlias, userRoleId, userData)
+	console.log('creating teacher...');
+	return testBench.users.createUser(userAlias, userRoleId, userData)
 		.then(function() {
-			enrollLoop(1);
+			console.log('finished creating the teacher, now enrolling...');
+			return enrollLoop(1);
 		}).catch(function(err) {
 			console.log('something went wrong creating the teacher: ' + err);
 		});
 
 	function enrollLoop(n) {
 		var courseAlias = config.COURSE_NAME + n;
-		if(n===51) return;
-		testBench.enrollments.enrollUserInCourse(userAlias, courseAlias, userRoleId)
-			.catch(function(err) {
+		if(n === 51) {
+			console.log('finished enrolling teacher in courses');
+			return;
+		}
+		return testBench.enrollments.enrollUserInCourse(userAlias, courseAlias, userRoleId)
+			.then(function() {
+				return enrollLoop(n+1);
+			}).catch(function(err) {
 				console.log('something went wrong with an enrollment: ' + err);
 			});
-		enrollLoop(n+1);
 	}
 }
 
@@ -105,27 +206,34 @@ function myEval(cmd) {
 
 	co(function*() {
 		switch(args[0]) {
-      case 'createCourses':
-        createCourses();
-        break;
+			case 'createCourses':
+				yield createCourses();
+				break;
 			case 'createStudents':
-				createStudents();
+				yield createStudents();
 				break;
 			case 'createTeacher':
-				createTeacher();
+				yield createTeacher();
 				break;
 			case 'cleanup':
 				yield cleanup();
 				break;
-      case 'generateData':
-        // first, create the courses
-        // then, create the users; the students need to be enrolled in one course, teacher enrolled in all
-        // then, create the discussion posts
-			case 'help':
-        console.log('help');
-        break;
+			case 'generateData':
+				yield createCourses()
+					.then(function() {
+						return createStudents()
+							.then(function() {
+								return createTeacher()
+									.then(function() {
+										return createDiscussions();
+									});
+							});
+						});
+
+				// then, create the discussion posts
+				break;
 			default:
-				console.log('I didn\'t recognize that command. Type \'help\' to see a list of commands');
+				console.log('I didn\'t recognize that command.');
 		}
 	}).catch(function(err) {
 		console.log(err.stack);
