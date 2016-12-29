@@ -15,7 +15,12 @@ function cleanup() {
 	console.log('cleaning up data created in this session...');
 	return testBench.users.cleanup()
 		.then(function() {
-			testBench.courses.cleanup();
+			testBench.courses.cleanup()
+				.catch(function(err) {
+					console.log('something went wrong cleaning up courses: ' + err);
+				});
+		}).catch(function(err) {
+			console.log('something went wrong cleaning up users: ' + err);
 		});
 }
 
@@ -34,14 +39,13 @@ function createCourses() {
 	function coursesLoop(n) {
 		var courseAlias = config.COURSE_NAME + n;
 		if(n === 51) {
-			console.log('done! created courses');
 			return Promise.resolve();
 		} else {
 			return testBench.courses.createCourse(courseAlias, templateAlias)
 				.then(function() {
 					return coursesLoop(n+1);
 				}).catch(function(err) {
-					console.log('something went wrong');
+					console.log('something went wrong creating a course: ' + err);
 				});
 		}
 	}
@@ -50,6 +54,7 @@ function createCourses() {
 function createDiscussions() {
 	const courseAlias = 'd2lcourse1'; //this is the course that everyone is enrolled in
 
+	console.log('creating discussion forums, topics, and posts...');
 	return forumLoop(1);
 
 	function forumLoop(n) {
@@ -66,18 +71,16 @@ function createDiscussions() {
 			RequiresApproval: false
 		};
 		if(n === 7) {
-			console.log('done! created discussions');
 			return Promise.resolve();
 		} else {
 			return testBench.discussions.createForum(forumData, courseAlias)
 				.then(function() {
-					console.log('creating topics for ' + forumData.Name + '...');
 					return topicLoop(1, forumData.Name)
 						.then(function() {
 							return forumLoop(n+1);
 						});
 				}).catch(function(err) {
-					console.log('something went wrong: ' + err);
+					console.log('something went wrong creating a discussion forum: ' + err);
 				});
 		}
 	}
@@ -102,18 +105,16 @@ function createDiscussions() {
 			RatingType: null
 		};
 		if(n === 7) {
-			console.log('done! created topics for ' + forumName);
 			return Promise.resolve();
 		} else {
 			return testBench.discussions.createTopic(topicData, forumName)
 				.then(function() {
-					console.log('creating posts for ' + topicData.Name + '...');
 					return postLoop(1, topicData.Name)
 						.then(function() {
 							return topicLoop(n + 1, forumName);
 						});
 				}).catch(function(err) {
-					console.log('something went wrong: ' + err);
+					console.log('something went wrong creating a disucssion topic: ' + err);
 				});
 		}
 	}
@@ -122,28 +123,75 @@ function createDiscussions() {
 		const postData = {
 			ParentPostId: null,
 			Subject: topicName + 'Post' + n,
-			Message: 'Nothing exciting here',
+			Message: {
+				Content: '<p><img src=\\\"https://s.brightspace.com/course-images/images/143b0716-e467-46f3-8dd3-99df1443c1c7/banner-wide-high-density-max-size.jpg\\\"/></p>',
+				Type: 'html'
+			},
 			IsAnonymous: false
 		},
 			userPosting = config.USERNAME + n;
 		if(n === 7) {
-			console.log('done! created posts for ' + topicName);
 			return Promise.resolve();
 		} else {
 			return testBench.discussions.createPost(postData, topicName, userPosting)
 				.then(function() {
 					return postLoop(n + 1, topicName);
 				}).catch(function(err) {
-					console.log('something went wrong: ' + err);
+					console.log('something went wrong creating a discussion post: ' + err);
 				});
 		}
 	}
 }
 
+function createGrades() {
+	const courseAlias = config.COURSE_NAME + '1';
+	const categoryAlias = 'gradecategory';
+	const objectAlias = categoryAlias + ' gradeobject';
+	const gradeCategory = {
+		Name: categoryAlias,
+	    ShortName: categoryAlias,
+	    CanExceedMax: false,
+	    ExcludeFromFinalGrade: false,
+	    StartDate: null,
+	    EndDate: null,
+	    Weight: 0.25,
+	    MaxPoints: null,
+	    AutoPoints: null,
+	    WeightDistributionType: null,
+	    NumberOfHighestToDrop: null,
+	    NumberOfLowestToDrop: null
+	};
+
+	console.log('creating a grade category and object...');
+	return testBench.grades.createGradeCategory(gradeCategory, courseAlias)
+		.then(function(response) {
+			const gradeObject = {
+			    MaxPoints: 100,
+			    CanExceedMaxPoints: false,
+				IsBonus: false,
+			    ExcludeFromFinalGradeCalculation: false,
+			    GradeSchemeId: null,
+			    Name: objectAlias,
+			    ShortName: objectAlias,
+			    GradeType: "Numeric",
+			    CategoryId: response.Id,
+			    Description: 'none',
+			    AssociatedTool: null
+			};
+			return testBench.grades.createGradeObject(gradeObject, courseAlias)
+				.catch(function(err) {
+					console.log('something went wrong creating a grade object: ' + err);
+				});
+		}).catch(function(err) {
+			console.log('something went wrong creating a grade cateogry: ' + err);
+		});
+}
+
 function createStudents() {
 	const userRoleId = 595,
-	courseAlias = config.COURSE_NAME + '1';
-	console.log('creating and enrolling students...');
+	courseAlias = config.COURSE_NAME + '1',
+	gradeAlias = 'gradecategory gradeobject';
+	console.log('creating, enrolling, and grading students...');
 	return makeStudent(1);
 
 	function makeStudent(n) {
@@ -153,19 +201,23 @@ function createStudents() {
 		};
 
 		if(n === 251){
-			console.log('done! created students successfully');
 			return Promise.resolve();
 		} else {
 			return testBench.users.createUser(userAlias, userRoleId, userData)
 				.then(function() {
 					return testBench.enrollments.enrollUserInCourse(userAlias, courseAlias, userRoleId)
 						.then(function() {
-							return makeStudent(n+1);
+							return testBench.grades.gradeStudent(userAlias, gradeAlias, 5)
+								.then(function() {
+									return makeStudent(n+1);
+								}).catch(function(err) {
+									console.log('something went wrong grading a student: ' + err);
+								});
 						}).catch(function(err) {
-							console.log('something went wrong with enrolling\n' + err);
+							console.log('something went wrong with enrolling' + err);
 						});
 				}).catch(function(err) {
-					console.log('something went wrong: ' + err);
+					console.log('something went wrong creating a user: ' + err);
 				});
 		}
 	}
@@ -180,7 +232,6 @@ function createTeacher() {
 	console.log('creating teacher...');
 	return testBench.users.createUser(userAlias, userRoleId, userData)
 		.then(function() {
-			console.log('finished creating the teacher, now enrolling...');
 			return enrollLoop(1);
 		}).catch(function(err) {
 			console.log('something went wrong creating the teacher: ' + err);
@@ -189,8 +240,7 @@ function createTeacher() {
 	function enrollLoop(n) {
 		var courseAlias = config.COURSE_NAME + n;
 		if(n === 51) {
-			console.log('finished enrolling teacher in courses');
-			return;
+			return Promise.resolve();
 		}
 		return testBench.enrollments.enrollUserInCourse(userAlias, courseAlias, userRoleId)
 			.then(function() {
@@ -218,19 +268,23 @@ function myEval(cmd) {
 			case 'cleanup':
 				yield cleanup();
 				break;
+			case 'createDiscussions':
+				yield createDiscussions();
+				break;
 			case 'generateData':
 				yield createCourses()
 					.then(function() {
-						return createStudents()
+						return createGrades()
 							.then(function() {
-								return createTeacher()
+								return createStudents()
 									.then(function() {
-										return createDiscussions();
-									});
+										return createTeacher()
+											.then(function() {
+												return createDiscussions()
+											});
+										});
 							});
 						});
-
-				// then, create the discussion posts
 				break;
 			default:
 				console.log('I didn\'t recognize that command.');
