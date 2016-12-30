@@ -17,7 +17,7 @@ npm run generateData
 
 ### Configuration
 
-Tests are configured using environment variables. Note that environment variables are all uppercase, while npm config variables are all lowercase. Defaults can be found in package.json under the config property.
+ Configuration uses environment variables with the following defaults.
 
 * `LMS_URL` LMS url (http://imedaylight1.uat.d2ldev.com/)
 * `TENANT_ID` Specify a tenant id (5fd775b8-b445-4baf-b75f-b295b6ae657b for above)
