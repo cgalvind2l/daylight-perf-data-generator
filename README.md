@@ -6,18 +6,19 @@ This is copied from the [Pulse-test-data-generator project](https://github.com/B
 
 ## Generating the Data
 ``` BASH
-node app.js
+npm run generateData
 ```
 
 ### Configuration
 
 Tests are configured using environment variables. Note that environment variables are all uppercase, while npm config variables are all lowercase. Defaults can be found in package.json under the config property.
 
-* `LMS_URL` LMS url
-* `TENANT_ID` Specify a tenant id to use when running LMS-less tests.
-* `USERNAME` Username of your user that will receive the updates.
-* `PASSWORD` Password of the user that will receive the updates.
-* `AUTH_SERVICE` Url of the auth service to use
+* `LMS_URL` LMS url (http://imedaylight1.uat.d2ldev.com/)
+* `TENANT_ID` Specify a tenant id (5fd775b8-b445-4baf-b75f-b295b6ae657b for above)
+* `USERNAME` Username that will be used as the root for all usernames (default 'd2luser')
+* `PASSWORD` Password of the instructor user (default 'd2lsupport')
+* `COURSE_NAME` String that will be used as the root for all courses created (default 'd2lcourse')
+* `AUTH_SERVICE` Url of the auth service to use (for the above UAT site, use https://dev-auth.brightspace.com/core/. for local LMS's, use https://auth-dev.proddev.d2l/core/)
 
 If using with a local LMS set appropriate config variable values for LMS_URL, TENANT_ID, BFS_URL and AUTH_SERVICE. Also run the following:
 

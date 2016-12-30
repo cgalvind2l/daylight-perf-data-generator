@@ -1,20 +1,9 @@
 {
-  "name": "Pulse-updates-tests",
+  "name": "Daylight Perf Data Generator",
   "scripts": {
     "lint": "eslint .",
     "test": "npm run lint -s",
 	"generateData": "echo generateData | node app.js"
-  },
-  "config": {
-    "lms_url": "http://uxdtest.uat.d2ldev.com",
-    "tenant_id": "97e3a278-bcbc-4e3b-aa0e-334bd491988e",
-    "auth_service": "https://dev-auth.brightspace.com/core/",
-    "username": "PulseUser",
-    "password": "d2l",
-    "device_token": "AndroidE2ETestDevice",
-    "device_platform": "android",
-    "bfs_url": "https://updates.api.dev.brightspace.com",
-    "export_template": "./templates/lms.json.dust"
   },
   "devDependencies": {
     "@d2l/brightspace-test-bench": "git://github.com/Brightspace/brightspace-test-bench.git#daylight-perf-benchmark-extensions",
