@@ -1,12 +1,9 @@
 {
   "name": "Pulse-updates-tests",
   "scripts": {
-    "mocha": "./node_modules/mocha/bin/_mocha",
-    "discussions": "mocha --timeout 120000 ./test/discussions.js",
-    "combo": "mocha --timeout 120000 ./test/combination.js",
-    "user-progress": "node test/userProgress.js",
     "lint": "eslint .",
-    "test": "npm run lint -s"
+    "test": "npm run lint -s",
+	"generateData": "echo generateData | node app.js"
   },
   "config": {
     "lms_url": "http://uxdtest.uat.d2ldev.com",
@@ -20,7 +17,7 @@
     "export_template": "./templates/lms.json.dust"
   },
   "devDependencies": {
-    "@d2l/brightspace-test-bench": "file:../brightspace-test-bench/",
+    "@d2l/brightspace-test-bench": "git://github.com/Brightspace/brightspace-test-bench.git#daylight-perf-benchmark-extensions",
     "@d2l/gimme-jwt": "^1.0.0",
     "better-assert": "^1.0.2",
     "chai": "3.0.0",

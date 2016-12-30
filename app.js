@@ -5,11 +5,8 @@ testBench = require('@d2l/brightspace-test-bench'),
 config = require('./config');
 
 const replServer = repl.start({
-	prompt: '> ',
 	eval: myEval
 });
-
-testBench.initialize(config.TENANT_ID, config.LMS_URL, config.AUTH_SERVICE);
 
 function cleanup() {
 	console.log('cleaning up data created in this session...');
@@ -123,10 +120,7 @@ function createDiscussions() {
 		const postData = {
 			ParentPostId: null,
 			Subject: topicName + 'Post' + n,
-			Message: {
-				Content: '<p><img src=\\\"https://s.brightspace.com/course-images/images/143b0716-e467-46f3-8dd3-99df1443c1c7/banner-wide-high-density-max-size.jpg\\\"/></p>',
-				Type: 'html'
-			},
+			Message: '<p><img src=\"https://s.brightspace.com/course-images/images/143b0716-e467-46f3-8dd3-99df1443c1c7/banner-wide-high-density-max-size.jpg\"/></p>',
 			IsAnonymous: false
 		},
 			userPosting = config.USERNAME + n;
@@ -205,17 +199,22 @@ function createStudents() {
 		} else {
 			return testBench.users.createUser(userAlias, userRoleId, userData)
 				.then(function() {
-					return testBench.enrollments.enrollUserInCourse(userAlias, courseAlias, userRoleId)
+					return testBench.users.createUserImage(userAlias, 'profile.png', './resources/profile.png')
 						.then(function() {
-							return testBench.grades.gradeStudent(userAlias, gradeAlias, 5)
+							return testBench.enrollments.enrollUserInCourse(userAlias, courseAlias, userRoleId)
 								.then(function() {
-									return makeStudent(n+1);
-								}).catch(function(err) {
-									console.log('something went wrong grading a student: ' + err);
-								});
-						}).catch(function(err) {
-							console.log('something went wrong with enrolling' + err);
-						});
+									return testBench.grades.gradeStudent(userAlias, gradeAlias, 5)
+										.then(function() {
+											return makeStudent(n+1);
+										}).catch(function(err) {
+											console.log('something went wrong grading a student: ' + err);
+										});
+									}).catch(function(err) {
+										console.log('something went wrong with enrolling' + err);
+									});
+					}).catch(function(err) {
+						console.log('something went wrong uploading a profile image: ' + err);
+					});
 				}).catch(function(err) {
 					console.log('something went wrong creating a user: ' + err);
 				});
@@ -232,7 +231,12 @@ function createTeacher() {
 	console.log('creating teacher...');
 	return testBench.users.createUser(userAlias, userRoleId, userData)
 		.then(function() {
-			return enrollLoop(1);
+			return testBench.users.createUserPassword(userAlias, 'd2lsupport')
+				.then(function() {
+					enrollLoop(1);
+				}).catch(function(err) {
+					console.log('something went wrong creating the teacher\'s password: ' + err);
+				});
 		}).catch(function(err) {
 			console.log('something went wrong creating the teacher: ' + err);
 		});
@@ -244,7 +248,12 @@ function createTeacher() {
 		}
 		return testBench.enrollments.enrollUserInCourse(userAlias, courseAlias, userRoleId)
 			.then(function() {
-				return enrollLoop(n+1);
+				return testBench.enrollments.pinCourse(userAlias, courseAlias)
+					.then(function() {
+						return enrollLoop(n+1);
+					}).catch(function(err) {
+						console.log('something went wrong with pinning a course: ' + err);
+					});
 			}).catch(function(err) {
 				console.log('something went wrong with an enrollment: ' + err);
 			});
@@ -255,40 +264,43 @@ function myEval(cmd) {
 	const args = cmd.trim().split(' ');
 
 	co(function*() {
-		switch(args[0]) {
-			case 'createCourses':
-				yield createCourses();
-				break;
-			case 'createStudents':
-				yield createStudents();
-				break;
-			case 'createTeacher':
-				yield createTeacher();
-				break;
-			case 'cleanup':
-				yield cleanup();
-				break;
-			case 'createDiscussions':
-				yield createDiscussions();
-				break;
-			case 'generateData':
-				yield createCourses()
-					.then(function() {
-						return createGrades()
+		yield testBench.initialize(config.TENANT_ID, config.LMS_URL, config.AUTH_SERVICE)
+			.then(function() {
+				switch(args[0]) {
+					case 'createCourses':
+						return createCourses();
+						break;
+					case 'createStudents':
+						return createStudents();
+						break;
+					case 'createTeacher':
+						return createTeacher();
+						break;
+					case 'cleanup':
+						return cleanup();
+						break;
+					case 'createDiscussions':
+						return createDiscussions();
+						break;
+					case 'generateData':
+						return createCourses()
 							.then(function() {
-								return createStudents()
+								return createGrades()
 									.then(function() {
-										return createTeacher()
+										return createStudents()
 											.then(function() {
-												return createDiscussions()
-											});
-										});
-							});
-						});
-				break;
-			default:
-				console.log('I didn\'t recognize that command.');
-		}
+												return createTeacher()
+													.then(function() {
+														return createDiscussions()
+													});
+												});
+									});
+								});
+						break;
+					default:
+						console.log('I didn\'t recognize that command.');
+				}
+			});
 	}).catch(function(err) {
 		console.log(err.stack);
 	}).then(function() {
