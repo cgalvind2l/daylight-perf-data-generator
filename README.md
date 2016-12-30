@@ -4,6 +4,12 @@ This is used for generating test data for measuring the performance of Daylight 
 
 This is copied from the [Pulse-test-data-generator project](https://github.com/Brightspace/Pulse-test-data-generator).
 
+## Getting Started
+1) Install Node.js
+2) Check out this repository
+3) In a terminal, run the command: `npm install`
+4) Once that has completed, you can generate the data with the below command
+
 ## Generating the Data
 ``` BASH
 npm run generateData
